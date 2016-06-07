@@ -1,0 +1,25 @@
+{
+  "name": "first_ether",
+  "version": "1.0.0",
+  "description": "This is my first experiment to understand how Ethereum works :) Something to just, compile, deploy and use",
+  "main": "null",
+  "dependencies": {
+    "ether-pudding": "^3.0.3",
+    "solc": "^0.3.4",
+    "web3": "^0.17.0-alpha"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daragao/FirstEthereumExperiment.git"
+  },
+  "author": "Duarte Aragao",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/daragao/FirstEthereumExperiment/issues"
+  },
+  "homepage": "https://github.com/daragao/FirstEthereumExperiment#readme"
+}
