@@ -5,10 +5,14 @@ var DeployContract = require('./src/deploy_contract.js');
 gulp.task('default', function() {
 });
 
+var contractsDir = __dirname+'/contracts';
+var binContractsDir = __dirname+'/bin/contracts';
+
 gulp.task('compile', function() {
-    CompileContract.compileAllContracts('./contracts');
+    var options = { overwrite:true };
+    CompileContract.compileAllContracts(contractsDir,binContractsDir,options);
 });
 
 gulp.task('deploy', function() {
-    DeployContract.deployAllContracts('./bin/contracts');
+    DeployContract.deployAllContracts(binContractsDir);
 });

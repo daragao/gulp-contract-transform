@@ -1,6 +1,7 @@
 var fs = require('fs');
 var Web3 = require('web3');
 var web3 = new Web3();
+var Pudding = require('ether-pudding');
 
 module.exports = {
     deployContract: function(contractFilename,contractParams,account,gas) {
@@ -19,7 +20,12 @@ module.exports = {
         contractParams = contractParams || [];
         var deployedContract = Contract.new.apply(Contract,contractParams);
        return deployedContract.then(function(contractInstance) {
-            console.log(contractFilename+' contract address: '+contractInstance.address);
+           console.log(contractFilename+' contract address: '+contractInstance.address);
+           Contract.address = contractInstance.address;
+           return Contract;
+        }).then(function(contract){
+            console.log(contract.name);
+            return Pudding.save(Contract.name,Contract,contractFilename);
         }).catch(function(err) {
             console.log("Error creating contract!");
             console.log(err.stack);
@@ -32,7 +38,7 @@ module.exports = {
         var deployPromiseArray = [];
         files.forEach(function(filename) {
             var filepath = compiledContractDir + '/' + filename;
-            deployPromiseArray.push(self.deployContract('../'+filepath));
+            deployPromiseArray.push(self.deployContract(filepath));
         });
     }
 };

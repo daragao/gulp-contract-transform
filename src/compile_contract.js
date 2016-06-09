@@ -4,7 +4,7 @@ var Pudding = require('ether-pudding');
 
 module.exports = {
 
-    compileContract: function(contractFilename,binContractDir) {
+    compileContract: function(contractFilename,binContractDir,options) {
         var source = fs.readFileSync(contractFilename,{encoding: 'utf8'});
         source = source.toString().replace(/\n/g,' ');
 
@@ -24,20 +24,20 @@ module.exports = {
         });
 
         var binContractDir = binContractDir || './bin/contracts'
-        var options = {};
+        var options = options || { overwrite:true };
         var savePromise =  Pudding.saveAll(contractsObj, binContractDir,options);
         return savePromise.then(function() {
             console.log('Contracts generated!');
         });
     },
 
-    compileAllContracts: function(contractDir) {
+    compileAllContracts: function(contractDir,binContractDir,options) {
         var self = this;
         files = fs.readdirSync(contractDir);
         var compilePromiseArray = [];
         files.forEach(function(filename) {
             var filepath = contractDir + '/' + filename;
-            compilePromiseArray.push(self.compileContract(filepath));
+            compilePromiseArray.push(self.compileContract(filepath,binContractDir,options));
         });
     }
 };
