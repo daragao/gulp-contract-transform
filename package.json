@@ -8,7 +8,9 @@
     "solc": "^0.3.4",
     "web3": "^0.17.0-alpha"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "gulp": "^3.9.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
