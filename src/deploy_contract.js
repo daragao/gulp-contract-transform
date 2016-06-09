@@ -24,7 +24,6 @@ module.exports = {
            Contract.address = contractInstance.address;
            return Contract;
         }).then(function(contract){
-            console.log(contract.name);
             return Pudding.save(Contract.name,Contract,contractFilename);
         }).catch(function(err) {
             console.log("Error creating contract!");
