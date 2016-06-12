@@ -5,6 +5,7 @@
   "main": "null",
   "dependencies": {
     "ether-pudding": "^3.0.3",
+    "graphlib": "^2.1.0",
     "solc": "^0.3.4",
     "web3": "^0.17.0-alpha"
   },
