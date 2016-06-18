@@ -1,18 +1,17 @@
 var gulp = require('gulp');
-var CompileContract = require('./src/compile_contract.js');
-var DeployContract = require('./src/deploy_contract.js');
+var contractTransform = require('./gulp-contract-transform.js');
 
 gulp.task('default', function() {
 });
 
-var contractsDir = __dirname+'/contracts';
-var binContractsDir = __dirname+'/bin/contracts';
-
 gulp.task('compile', function() {
-    var options = { overwrite:true };
-    CompileContract.compileAllContracts(contractsDir,binContractsDir,options);
+    gulp.src('contracts/**/*.sol')
+    .pipe(contractTransform.compileContracts())
+    .pipe(gulp.dest('modified-files'))
 });
 
 gulp.task('deploy', function() {
-    DeployContract.deployAllContracts(binContractsDir);
+    gulp.src('modified-files/**/*.sol.js')
+    .pipe(contractTransform.deployContracts())
+    .pipe(gulp.dest('modified-files-deployed'))
 });
