@@ -9,6 +9,10 @@ contract Greeter is Mortal {
         greeting = _greeting;
     }
 
+    function innerGreet() constant returns (string) {
+        return 'Inner Greeting!';
+    }
+    
     /* main function */
     function greet() constant returns (string) {
         return greeting;

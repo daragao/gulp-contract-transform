@@ -26,29 +26,26 @@ var createContractFile = function(contract,name) {
 var deployContract = function(web3,g,contract,account,gas) {
     gutil.log('Deploying:',contract.contract_name);
     var regex = /__([^_]*)_*/g;
-    var match;
-    while(match = regex.exec(contract.binary)) {
-        var address = g.node(match[1]).address.slice(2);
-        //gutil.log(match[0],address);
-        contract.binary = contract.binary
-        .replace(RegExp(match[0],'g'),address);
-    }
+var match;
+while(match = regex.exec(contract.binary)) {
+    var address = g.node(match[1]).address.slice(2);
+    contract.binary = contract.binary
+    .replace(RegExp(match[0],'g'),address);
+}
 
-    contract.setProvider(web3.currentProvider);
-    contract.defaults({ from: account, gas: gas });
-    var deployedContract = contract.new(contract,{});
-    //gutil.log(contract.address,account);
-    deployedContract = deployedContract.then(function(contractInstance) {
-        gutil.log('Contract deployed with address:',contractInstance.address);
-        contract.address = contractInstance.address;
-        //return contractInstance;
-        return contract;
-    }).catch(function(err) {
-        console.log("Error deploying contract!");
-        console.log(err.stack);
-    });
+contract.setProvider(web3.currentProvider);
+contract.defaults({ from: account, gas: gas });
+var deployedContract = contract.new(contract,{});
+deployedContract = deployedContract.then(function(contractInstance) {
+    gutil.log('Contract deployed with address:',contractInstance.address);
+    contract.address = contractInstance.address;
+    return contract;
+}).catch(function(err) {
+    console.log("Error deploying contract!");
+    console.log(err.stack);
+});
 
-    return deployedContract;
+return deployedContract;
 };
 
 contractTransform.compileContracts = function() {
@@ -64,13 +61,11 @@ contractTransform.compileContracts = function() {
         if (file.isBuffer()) {
             var contractSrc = file.contents.toString();
             var filename = file.path.slice(file.base.length);
-            //gutil.log(filename);
             g.setNode(filename,contractSrc);
 
             var regex = /import\s+["']([^"']+)["']/g;
             var match;
             while(match = regex.exec(contractSrc)) {
-                //gutil.log(filename,match[1]);
                 g.setEdge(filename,match[1]);
             }
         }
@@ -87,15 +82,12 @@ contractTransform.compileContracts = function() {
                 .replace(/\/\/[^\n]*\n/g,' ')
                 .replace(/\n/g,' ')
                 .replace(/\/\*[^\*]*\*\//g,' ')
-                .replace(/\s+/g,' ');
+                    .replace(/\s+/g,' ');
 
-            //gutil.log(obj[filename]);
                 return obj;
             },{});
 
             var compiled = solc.compile({sources:source}, 1);
-            //gutil.log(compiled);
-            //gutil.log(Object.keys(compiled));
 
             var contractNameArray = Object.keys(compiled.contracts);
             contractNameArray.forEach(function(name) {
@@ -107,16 +99,8 @@ contractTransform.compileContracts = function() {
                     binary: bytecode,
                     unlinked_binary: bytecode
                 };
-                //gutil.log(name);
                 var contract = Pudding.generate(name,contract_data);
 
-                /*var newFile = new gutil.File({
-                    cwd: "",
-                    base: "",
-                    path: name+'.sol.js',
-                    contents: new Buffer(contract)
-                });
-                this.push(newFile)*/
                 this.push(createContractFile(contract,name));
                 gutil.log('Contract JS created for',name);
             }.bind(this));
@@ -141,24 +125,20 @@ contractTransform.deployContracts = function(providerURL,account,gas) {
         if (file.isStream()) {
             this.emit('error',
                       new PluginError(PLUGIN_NAME, 'Streams are not supported!'));
-            return cb();
+                      return cb();
         }
 
         if (file.isBuffer()) {
             var filename = file.path.slice(file.base.length);
-            //gutil.log(filename);
-            var contractJS = require(file.path);//JSON.stringify(file.contents.toString());
-            //gutil.log(contractJS.contract_name);
-            //gutil.log(contractJS);
+            var contractJS = require(file.path);
             g.setNode(contractJS.contract_name,contractJS);
             //gutil.log(contractSrc);
             var regex = /__([^_]*)_*/g;
 
-            var match;
-            while(match = regex.exec(contractJS.binary)) {
-                //gutil.log(contractJS.contract_name,match[1]);
-                g.setEdge(contractJS.contract_name,match[1]);
-            }
+var match;
+while(match = regex.exec(contractJS.binary)) {
+    g.setEdge(contractJS.contract_name,match[1]);
+}
         }
         //this.push(file)
         cb();
@@ -175,11 +155,14 @@ contractTransform.deployContracts = function(providerURL,account,gas) {
                 else promise = deployFunc()
                     return promise.then(function(x){
 
+                        // this is function and needs to be made into a string
+                        // to be saved properly
                         var name = x.contract_name
                         var contract_data = {
                             abi: x.abi,
                             binary: x.binary,
-                            unlinked_binary: x.unlinked_binary
+                            unlinked_binary: x.unlinked_binary,
+                            address: x.address
                         };
                         var contract = Pudding.generate(name,contract_data);
 
