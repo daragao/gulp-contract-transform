@@ -12,6 +12,45 @@ const PLUGIN_NAME = 'gulp-contract-transform';
 
 var contractTransform = {};
 
+var createContractFile = function(contract,name) {
+    name = name || contract.contract_name;
+    var newFile = new gutil.File({
+        cwd: "",
+        base: "",
+        path: name+'.sol.js',
+        contents: new Buffer(contract)
+    });
+    return newFile;
+};
+
+var deployContract = function(web3,g,contract,account,gas) {
+    gutil.log('Deploying:',contract.contract_name);
+    var regex = /__([^_]*)_*/g;
+    var match;
+    while(match = regex.exec(contract.binary)) {
+        var address = g.node(match[1]).address.slice(2);
+        //gutil.log(match[0],address);
+        contract.binary = contract.binary
+        .replace(RegExp(match[0],'g'),address);
+    }
+
+    contract.setProvider(web3.currentProvider);
+    contract.defaults({ from: account, gas: gas });
+    var deployedContract = contract.new(contract,{});
+    //gutil.log(contract.address,account);
+    deployedContract = deployedContract.then(function(contractInstance) {
+        gutil.log('Contract deployed with address:',contractInstance.address);
+        contract.address = contractInstance.address;
+        //return contractInstance;
+        return contract;
+    }).catch(function(err) {
+        console.log("Error deploying contract!");
+        console.log(err.stack);
+    });
+
+    return deployedContract;
+};
+
 contractTransform.compileContracts = function() {
 
     var g = new Graph();
@@ -35,7 +74,7 @@ contractTransform.compileContracts = function() {
                 g.setEdge(filename,match[1]);
             }
         }
-        this.push(file)
+        //this.push(file)
         cb();
     },function(cb) {
         gutil.log('Compiling contracts...');
@@ -71,46 +110,20 @@ contractTransform.compileContracts = function() {
                 //gutil.log(name);
                 var contract = Pudding.generate(name,contract_data);
 
-                var newFile = new gutil.File({
+                /*var newFile = new gutil.File({
                     cwd: "",
                     base: "",
                     path: name+'.sol.js',
                     contents: new Buffer(contract)
                 });
-                this.push(newFile)
+                this.push(newFile)*/
+                this.push(createContractFile(contract,name));
                 gutil.log('Contract JS created for',name);
             }.bind(this));
         }
         cb();
     });
     return stream;
-};
-
-var deployContract = function(web3,g,contract,account,gas) {
-    gutil.log('Deploying:',contract.contract_name);
-    var regex = /__([^_]*)_*/g;
-    var match;
-    while(match = regex.exec(contract.binary)) {
-        var address = g.node(match[1]).address.slice(2);
-        //gutil.log(match[0],address);
-        contract.binary = contract.binary
-        .replace(RegExp(match[0],'g'),address);
-    }
-
-    contract.setProvider(web3.currentProvider);
-    contract.defaults({ from: account, gas: gas });
-    var deployedContract = contract.new(contract,{});
-    //gutil.log(contract.address,account);
-    deployedContract.then(function(contractInstance) {
-        gutil.log('Contract deployed with address:',contractInstance.address);
-        contract.address = contractInstance.address;
-        return contractInstance;
-    }).catch(function(err) {
-        console.log("Error creating contract!");
-        console.log(err.stack);
-    });
-
-    return deployedContract;
 };
 
 contractTransform.deployContracts = function(providerURL,account,gas) {
@@ -147,6 +160,7 @@ contractTransform.deployContracts = function(providerURL,account,gas) {
                 g.setEdge(contractJS.contract_name,match[1]);
             }
         }
+        //this.push(file)
         cb();
     },function(cb) {
         gutil.log('Deploying contracts...');
@@ -154,27 +168,31 @@ contractTransform.deployContracts = function(providerURL,account,gas) {
             gutil.log(gutil.colors.red('THROW AN ERROR HERE! THERE ARE CYCLES!'));
         } else {
             var orderedNodes = graphlib.alg.topsort(g).reverse();
+            var lastProm = orderedNodes.reduce(function(promise,contractName) {
+                var contract = g.node(contractName);
+                var deployFunc = deployContract.bind(this,web3,g,contract,account,gas);
+                if(promise) promise = promise.then(deployFunc);
+                else promise = deployFunc()
+                    return promise.then(function(x){
 
-            //var contract = g.nodorderedNodes[0]);
-            deployContract(web3,g,g.node(orderedNodes[0]),account,gas)
-            .then(deployContract.bind(this,web3,g,g.node(orderedNodes[1]),account,gas))
-            .then(deployContract.bind(this,web3,g,g.node(orderedNodes[2]),account,gas));
-/*
-            var contract = g.node(orderedNodes[0]);
-            deployContract(web3,g,contract).then(function(contractInstance) {
-                var newFile = new gutil.File({
-                    cwd: "",
-                    base: "",
-                    path: contractInstance.contract_name+'.sol.js',
-                    contents: new Buffer(contractInstance)
-                });
-                //this.push(newFile)
-                cb(null,newFile);
-            }.bind(this));
-            //gutil.log(orderedNodes);
-            */
+                        var name = x.contract_name
+                        var contract_data = {
+                            abi: x.abi,
+                            binary: x.binary,
+                            unlinked_binary: x.unlinked_binary
+                        };
+                        var contract = Pudding.generate(name,contract_data);
+
+                        this.push(createContractFile(contract,name));
+                    }.bind(this));
+            }.bind(this),null);
+            //run cb after it ended creating all the contracts
+            lastProm.then(function(){
+                gutil.log('All contracts deployed!');
+                cb();
+            });
         }
-        cb();
+        //cb();
     });
     return stream;
 };
