@@ -1,6 +1,6 @@
 {
     "name": "gulp-contract-transform",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "simple wrapper to compile and deploy ethereum contracts",
     "main": "null",
     "dependencies": {
