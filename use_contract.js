@@ -11,7 +11,7 @@ GreeterContract.defaults({from:web3.eth.accounts[1]});
 var contractAddress = process.argv[2];
 //var contractAddress = '0x4c8111ef6ed8a678c6ffd4f2bcb798a657aad19f';
 //var contractInstance = GreeterContract.at(contractAddress);
-GreeterContract.new().then(function(contractInstance) {
+GreeterContract.new('hello').then(function(contractInstance) {
     contractInstance
     .innerGreet.call().then(function(result) {
         console.log('contract inner greeter: '+result);

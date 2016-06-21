@@ -54,7 +54,8 @@ contractTransform.compileContracts = function() {
 
     var stream = through.obj(function(file, enc, cb) {
         if (file.isStream()) {
-            this.emit('error', new PluginError(PLUGIN_NAME, 'Streams are not supported!'));
+            this.emit('error',
+                      new PluginError(PLUGIN_NAME, 'Streams are not supported!'));
             return cb();
         }
 
@@ -74,7 +75,9 @@ contractTransform.compileContracts = function() {
     },function(cb) {
         gutil.log('Compiling contracts...');
         if(!graphlib.alg.isAcyclic(g)) {
-            gutil.log(gutil.colors.red('THROW AN ERROR HERE! THERE ARE CYCLES!'));
+            this.emit('error',
+                      new PluginError(PLUGIN_NAME, 'Contract depencies cycle!'));
+            return cb();
         } else {
             var orderedNodes = graphlib.alg.topsort(g).reverse();
             var source = orderedNodes.reduce(function(obj,filename) {
@@ -82,7 +85,7 @@ contractTransform.compileContracts = function() {
                 .replace(/\/\/[^\n]*\n/g,' ')
                 .replace(/\n/g,' ')
                 .replace(/\/\*[^\*]*\*\//g,' ')
-                    .replace(/\s+/g,' ');
+                .replace(/\s+/g,' ');
 
                 return obj;
             },{});
@@ -135,17 +138,19 @@ contractTransform.deployContracts = function(providerURL,account,gas) {
             //gutil.log(contractSrc);
             var regex = /__([^_]*)_*/g;
 
-var match;
-while(match = regex.exec(contractJS.binary)) {
-    g.setEdge(contractJS.contract_name,match[1]);
-}
+            var match;
+            while(match = regex.exec(contractJS.binary)) {
+                g.setEdge(contractJS.contract_name,match[1]);
+            }
         }
         //this.push(file)
         cb();
     },function(cb) {
         gutil.log('Deploying contracts...');
         if(!graphlib.alg.isAcyclic(g)) {
-            gutil.log(gutil.colors.red('THROW AN ERROR HERE! THERE ARE CYCLES!'));
+            this.emit('error',
+                      new PluginError(PLUGIN_NAME, 'Contract depencies cycle!'));
+            return cb();
         } else {
             var orderedNodes = graphlib.alg.topsort(g).reverse();
             var lastProm = orderedNodes.reduce(function(promise,contractName) {
